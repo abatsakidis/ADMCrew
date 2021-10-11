@@ -1,0 +1,4 @@
+1: bit field bugs ..
+on SUNOS it causes a bus error..
+we will fix it soon
+

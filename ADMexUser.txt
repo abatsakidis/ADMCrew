@@ -1,0 +1,21 @@
+#!/bin/sh
+# ooooooow man this iz 0day ! 
+# it was long for us to think about all the trial who will have for posting
+# this evil tools but into ADM we DONT PHEAR  WHITEHAT !
+# so we publish this 0daykradtools  Just for you 
+# extract user and groups from your favorite package (.tgz .tar.gz)
+# Version 4.5.6.1.6.8.1.5.7.6.8
+# 
+# howto use ?
+#
+#[/scsi3/local/root@root>ADMexUser /usr/src/redhat/SOURCES/samba-2.0.6.tar.gz
+#samba-bugs
+#samba
+
+if echo $1 | grep  "gz$" >/dev/null
+then
+(zcat $1 | head -c 1024|  strings  | tail +7 | head -2) 2>/dev/null																																																																																																																																																																																																													                                                                      				#what kind of editor you use? you pervert !
+exit
+fi
+(head -c 1024 $1|strings | tail +7 | head -2) 2>/dev/null
+exit

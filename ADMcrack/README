@@ -1,0 +1,34 @@
+                      ___      ______      _       _
+                    /     \   |   _   \   |  \   /  |
+                   |  / \  |  |  |  \  |  |   \_/   |
+                   | |___| |  |  |_ /  |  |   \_/   |
+..oO  THE          |  ---  |  |       /   |  |   |  |         CreW Oo..
+                   '''   '''   '''''''    ''''   ''''
+                               presents
+
+			
+			 brute forcing utilities
+
+	you can mail admcrack@adm.freelsd.net for nfo
+	regarding any of these tools (bugs fixes, suggestions, ...)
+
+
+	here you'll find :
+
+
+cvs-crack.tclsh:	a cvs pserver authentication cracker
+			(brute force your way to your cvs trees)
+			by stran9er
+
+http-crack.tclsh:	an http authentication cracker
+			by stran9er
+
+ssh-crack-1.1.tar.gz:	an ssh identity file cracker
+			by stran9er
+
+ADMw3pass.tgz:		a libwww-based http cracker, don't use it,
+			use http-crack.tclsh instead :)
+			by plaguez
+
+		
+

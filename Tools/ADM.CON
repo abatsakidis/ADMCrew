@@ -1,0 +1,20 @@
+#############################################################################
+#  ADMhack configuration Filez						    #
+#									    #		
+#############################################################################
+#
+# TIMEOUT   20      #define  the timeout if the host seem dont respond 
+# SCANTIME  5       #define the time of ADMhack waiting for reply
+# 
+  FINGER    NO      #ADMhack  dont finger the machine
+  MAIL      YES      #ADMhack  get the banner and launch the IA module
+  CGI       YES      #ADMhack dont try some cgi test
+  TELNET    NO      #ADMhack dont scan the port of telnetd
+  XWIN      YES      #ADMhack dont try to see if Xwin is spoofable          
+  SAMBA     YES     #ADMhack  make the SAMBA test                      
+ RPC       YES      #ADMhack dont make the rpc test                 
+ IMAP      YES       #ADMhack dont get the imapd banner 
+ FTP       NO       #ADMhack dont get the banner and test the ftp                    
+
+
+# NOTE: u can make a ultra configurable filez 

